@@ -130,7 +130,109 @@ pub fn mux_4_1() -> LogicUnit {
     unit.io.create_input(sn!('S', 1), vec![not0, and2, and3]);
     unit
 }
+pub fn mux_2n_1(n: usize) -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let num_inputs = 1 << n;
 
+    // Output OR gate
+    let or = unit.add_gate_output(LogicGateMode::OR, false, sn!('O'));
+
+    // AND gates for each data input
+    let mut and_ids = Vec::with_capacity(num_inputs);
+    for _ in 0..num_inputs {
+        let and = unit.add_gate(LogicGateMode::AND, false);
+        and_ids.push(and);
+        unit.connect(and, or);
+    }
+
+    // NOT gates (inverters) for each select line
+    let mut not_ids = Vec::with_capacity(n);
+    for _ in 0..n {
+        let not = unit.add_gate(LogicGateMode::NAND, true); // inverter
+        not_ids.push(not);
+    }
+
+    // For each select line, collect gates that need the non‑inverted signal
+    let mut select_connections: Vec<Vec<Id>> = vec![Vec::new(); n];
+    for j in 0..n {
+        select_connections[j].push(not_ids[j]); // the NOT gate itself
+    }
+
+    // Connect each AND gate to the appropriate select signals
+    for i in 0..num_inputs {
+        let and = and_ids[i];
+        for j in 0..n {
+            if (i >> j) & 1 == 1 {
+                // This AND needs the non‑inverted select line j
+                select_connections[j].push(and);
+            } else {
+                // This AND needs the inverted select line j
+                unit.connect(not_ids[j], and);
+            }
+        }
+    }
+
+    // Create the select inputs
+    for j in 0..n {
+        unit.io
+            .create_input(sn!('S', j as u8), select_connections[j].clone());
+    }
+
+    // Create the data inputs
+    for i in 0..num_inputs {
+        unit.io.create_input(sn!('I', i as u8), vec![and_ids[i]]);
+    }
+
+    unit
+}
+
+pub fn decoder_1_2n(n: usize) -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let num_outputs = 1 << n;
+
+    // NOT gates for each select line (inverters)
+    let mut not_gates = Vec::with_capacity(n);
+    for _ in 0..n {
+        let not = unit.add_gate(LogicGateMode::NAND, true);
+        not_gates.push(not);
+    }
+
+    // AND gates for each output – these are the outputs of the decoder
+    let mut and_gates = Vec::with_capacity(num_outputs);
+    for i in 0..num_outputs {
+        let and = unit.add_gate_output(LogicGateMode::AND, false, sn!('O', i as u8));
+        and_gates.push(and);
+    }
+
+    // For each select line, collect which AND gates need the direct (non‑inverted) signal
+    let mut direct_connections: Vec<Vec<Id>> = vec![Vec::new(); n];
+
+    // Connect each AND gate to the appropriate select signals
+    for i in 0..num_outputs {
+        let and = and_gates[i];
+        for j in 0..n {
+            if (i >> j) & 1 == 1 {
+                // This AND needs the direct select signal
+                direct_connections[j].push(and);
+            } else {
+                // This AND needs the inverted select signal
+                unit.connect(not_gates[j], and);
+            }
+        }
+    }
+
+    // Create the select inputs
+    for j in 0..n {
+        let mut connections = direct_connections[j].clone();
+        connections.push(not_gates[j]); // connect the select line to its inverter
+        unit.io.create_input(sn!('S', j as u8), connections);
+    }
+
+    // Add a single enable input I0, connected to every output AND gate
+    unit.io.create_input(sn!('I'), and_gates.clone());
+
+    unit
+}
 /// modes:
 /// 0 - addition
 /// 1 - substraction

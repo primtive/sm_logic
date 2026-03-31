@@ -39,7 +39,7 @@ fn bp() {
 }
 fn emu() {
     Emulator::enable_mouse_mode();
-    let unit = reg_8b();
+    let unit = decoder_1_2n(2);
     let mut em = Emulator::new(unit);
     em.display();
     loop {
