@@ -4,10 +4,13 @@
 
 use std::{fs::File, io::Write};
 
-use crate::{blueprint::Blueprint, graph::run_graph, logic::*, pos::Pos};
+use crossterm::terminal::enable_raw_mode;
+
+use crate::{blueprint::Blueprint, emulator::Emulator, graph::run_graph, logic::*, pos::Pos};
 
 mod blueprint;
 mod color;
+mod emulator;
 mod graph;
 mod logic;
 mod logic_gate;
@@ -22,15 +25,28 @@ fn save_blueprint(json: String) {
     f.write_all(json.as_bytes()).unwrap();
 }
 
-fn main() {
+fn bp() {
     // run_graph(alu_8b_4m());
 
     let mut blueprint = Blueprint::new();
-    // blueprint.place(ticker().assemble_io(Pos::default(), false));
-    blueprint.place(alu_8b_4m().assemble_io(Pos::new(0, 1, 0), true));
+    blueprint.place(sr_latch().assemble_io(Pos::default(), true));
+    // blueprint.place(alu_8b_4m().assemble_io(Pos::new(0, 1, 0), true));
     // blueprint.place(adder_substractor_8b().assemble_io(Pos::new(0, 2, 0), true));
     let json = blueprint.to_json().to_string();
     // println!("{json}");
     save_blueprint(json);
     println!("file saved");
+}
+fn emu() {
+    Emulator::enable_mouse_mode();
+    let unit = reg_8b();
+    let mut em = Emulator::new(unit);
+    em.display();
+    loop {
+        em.handle_events();
+    }
+}
+
+fn main() {
+    emu();
 }

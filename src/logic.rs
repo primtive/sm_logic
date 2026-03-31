@@ -41,6 +41,7 @@ pub fn full_adder() -> LogicUnit {
 }
 
 /// I: (A{0-7}, B{0-7}, K), O: (O{0-7})
+/// K is required!!!
 /// tested
 pub fn adder_substractor_8b() -> LogicUnit {
     let mut unit = LogicUnit::new();
@@ -89,6 +90,19 @@ pub fn mux_2_1() -> LogicUnit {
     unit
 }
 
+pub fn sr_latch() -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let q = unit.add_gate_output(LogicGateMode::NOR, false, sn!('Q'));
+    let nq = unit.add_gate(LogicGateMode::NOR, true);
+    let h = unit.add_gate(LogicGateMode::AND, false);
+    unit.connect(q, nq);
+    unit.connect(nq, h);
+    unit.connect(h, q);
+    unit.io.create_input(sn!('S'), vec![nq]);
+    unit.io.create_input(sn!('R'), vec![q]);
+    unit
+}
+
 /// I: (I{0-3}, S{0-1}) O: O
 /// tested
 pub fn mux_4_1() -> LogicUnit {
@@ -112,8 +126,8 @@ pub fn mux_4_1() -> LogicUnit {
     unit.io.create_input(sn!('I', 1), vec![and1]);
     unit.io.create_input(sn!('I', 2), vec![and2]);
     unit.io.create_input(sn!('I', 3), vec![and3]);
-    unit.io.create_input(sn!('S', 0), vec![not0, and2, and3]);
-    unit.io.create_input(sn!('S', 1), vec![not1, and1, and3]);
+    unit.io.create_input(sn!('S', 0), vec![not1, and1, and3]);
+    unit.io.create_input(sn!('S', 1), vec![not0, and2, and3]);
     unit
 }
 
@@ -134,7 +148,9 @@ pub fn alu_8b_4m() -> LogicUnit {
         .map(|_| unit.add_gate(LogicGateMode::NAND, false))
         .collect();
 
-    unit.io.create_input(sn!('S', 0), vec![]);
+    // opcode
+    unit.io
+        .create_input(sn!('S', 0), arithmetic.get_input(sn!('K')).ids.clone());
     unit.io.create_input(sn!('S', 1), vec![]);
     for i in 0..n {
         let mut a = arithmetic.get_input(sn!('A', i as u8)).ids.clone();
@@ -159,13 +175,49 @@ pub fn alu_8b_4m() -> LogicUnit {
         for id in &muxes[i].get_input(sn!('S', 0)).ids {
             unit.io.add_input(sn!('S', 0), *id);
         }
+        for id in &muxes[i].get_input(sn!('S', 1)).ids {
+            unit.io.add_input(sn!('S', 1), *id);
+        }
     }
 
     unit
 }
-
+/// tested
+pub fn reg_1b() -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let nand1 = unit.add_gate_output(LogicGateMode::NAND, false, sn!('O'));
+    let nand2 = unit.add_gate(LogicGateMode::NAND, true);
+    let h = unit.add_gate(LogicGateMode::AND, true);
+    let nand3 = unit.add_gate(LogicGateMode::NAND, true);
+    let nand4 = unit.add_gate(LogicGateMode::NAND, true);
+    let not = unit.add_gate(LogicGateMode::NAND, true);
+    unit.io.create_input(sn!('D'), vec![nand4, not]);
+    unit.io.create_input(sn!('C'), vec![nand3, nand4]);
+    unit.connect(nand4, nand1);
+    unit.connect(nand3, nand2);
+    unit.connect(not, nand3);
+    unit.connect(nand1, nand2);
+    unit.connect(nand2, h);
+    unit.connect(h, nand1);
+    unit
+}
 pub fn reg_8b() -> LogicUnit {
-    let mut reg = LogicUnit::new();
-    // let (b1, b2, b3, b4, b5)
-    reg
+    let mut unit = LogicUnit::new();
+    let mut regs: Vec<IO> = (0..8).map(|_| unit.embed(reg_1b())).collect();
+    unit.io.create_input(
+        sn!('C'),
+        regs.iter()
+            .map(|r| r.get_input(sn!('C')).ids.clone())
+            .flatten()
+            .collect(),
+    );
+    for i in 0..8 {
+        unit.io.create_input(
+            sn!('D', i),
+            regs[i as usize].get_input(sn!('D')).ids.clone(),
+        );
+        unit.io
+            .create_output(sn!('O', i), regs[i as usize].get_output(sn!('O')).id);
+    }
+    unit
 }

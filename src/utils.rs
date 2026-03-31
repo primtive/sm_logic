@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 pub type Id = u32;
-#[derive(Debug)]
+#[derive(Debug, Hash, Clone, Copy, PartialOrd)]
 pub struct SignalName(pub char, pub u8);
 #[macro_export]
 macro_rules! sn {
@@ -11,6 +11,18 @@ macro_rules! sn {
     ($c:literal, $n:expr) => {
         SignalName($c, $n)
     };
+}
+
+impl Ord for SignalName {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if self.0 == other.0 && self.1 == other.1 {
+            std::cmp::Ordering::Equal
+        } else if self.0 > other.0 || (self.0 == other.0 && self.1 > other.1) {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Less
+        }
+    }
 }
 
 impl PartialEq for SignalName {

@@ -11,11 +11,12 @@ pub fn new_controller_id() -> Id {
         ID
     }
 }
+#[derive(Clone)]
 pub struct LogicGate {
     pub id: Id,
-    active: bool,
-    mode: LogicGateMode,
-    pub(crate) children: Vec<Id>,
+    pub active: bool,
+    pub mode: LogicGateMode,
+    pub children: Vec<Id>,
 }
 #[repr(u8)]
 #[derive(Clone, Copy)]
@@ -55,6 +56,19 @@ impl LogicGate {
             "xaxis": 1,
             "zaxis": -2
         })
+    }
+    pub fn evaluate(&self, parents: &[bool]) -> bool {
+        if parents.is_empty() {
+            return false;
+        }
+        match self.mode {
+            LogicGateMode::AND => parents.iter().all(|&x| x),
+            LogicGateMode::OR => parents.iter().any(|&x| x),
+            LogicGateMode::XOR => parents.iter().fold(false, |acc, &x| acc ^ x),
+            LogicGateMode::NAND => !parents.iter().all(|&x| x),
+            LogicGateMode::NOR => !parents.iter().any(|&x| x),
+            LogicGateMode::XNOR => !parents.iter().fold(false, |acc, &x| acc ^ x),
+        }
     }
 }
 
