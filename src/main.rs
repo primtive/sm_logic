@@ -4,8 +4,6 @@
 
 use std::{fs::File, io::Write};
 
-use crossterm::terminal::enable_raw_mode;
-
 use crate::{blueprint::Blueprint, emulator::Emulator, graph::run_graph, logic::*, pos::Pos};
 
 mod blueprint;
@@ -39,8 +37,9 @@ fn bp() {
 }
 fn emu() {
     Emulator::enable_mouse_mode();
-    let unit = decoder_1_2n(2);
+    let unit = reg_bank_8b_8x();
     let mut em = Emulator::new(unit);
+
     em.display();
     loop {
         em.handle_events();

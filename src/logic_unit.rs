@@ -42,6 +42,16 @@ impl IO {
             .ids
             .push(id);
     }
+    pub fn add_inputs(&mut self, name: SignalName, ids: &[Id]) {
+        ids.iter().for_each(|&id| {
+            self.inputs
+                .iter_mut()
+                .find(|i| i.name == name)
+                .unwrap()
+                .ids
+                .push(id);
+        });
+    }
     pub fn get_input(&self, name: SignalName) -> &Input {
         self.inputs.iter().find(|i| i.name == name).unwrap()
     }

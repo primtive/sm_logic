@@ -274,12 +274,10 @@ pub fn alu_8b_4m() -> LogicUnit {
         unit.connect_to_input(xors[i], muxes[i].get_input(sn!('I', 3)));
         unit.io
             .create_output(sn!('O', i as u8), muxes[i].get_output(sn!('O')).id);
-        for id in &muxes[i].get_input(sn!('S', 0)).ids {
-            unit.io.add_input(sn!('S', 0), *id);
-        }
-        for id in &muxes[i].get_input(sn!('S', 1)).ids {
-            unit.io.add_input(sn!('S', 1), *id);
-        }
+        unit.io
+            .add_inputs(sn!('S', 0), &muxes[i].get_input(sn!('S', 0)).ids);
+        unit.io
+            .add_inputs(sn!('S', 1), &muxes[i].get_input(sn!('S', 1)).ids);
     }
 
     unit
@@ -293,8 +291,8 @@ pub fn reg_1b() -> LogicUnit {
     let nand3 = unit.add_gate(LogicGateMode::NAND, true);
     let nand4 = unit.add_gate(LogicGateMode::NAND, true);
     let not = unit.add_gate(LogicGateMode::NAND, true);
-    unit.io.create_input(sn!('D'), vec![nand4, not]);
-    unit.io.create_input(sn!('C'), vec![nand3, nand4]);
+    unit.io.create_input(sn!('I'), vec![nand4, not]);
+    unit.io.create_input(sn!('W'), vec![nand3, nand4]);
     unit.connect(nand4, nand1);
     unit.connect(nand3, nand2);
     unit.connect(not, nand3);
@@ -305,21 +303,85 @@ pub fn reg_1b() -> LogicUnit {
 }
 pub fn reg_8b() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let mut regs: Vec<IO> = (0..8).map(|_| unit.embed(reg_1b())).collect();
+    let regs: Vec<IO> = (0..8).map(|_| unit.embed(reg_1b())).collect();
     unit.io.create_input(
-        sn!('C'),
+        sn!('W'),
         regs.iter()
-            .map(|r| r.get_input(sn!('C')).ids.clone())
+            .map(|r| r.get_input(sn!('W')).ids.clone())
             .flatten()
             .collect(),
     );
     for i in 0..8 {
         unit.io.create_input(
-            sn!('D', i),
-            regs[i as usize].get_input(sn!('D')).ids.clone(),
+            sn!('I', i),
+            regs[i as usize].get_input(sn!('I')).ids.clone(),
         );
         unit.io
             .create_output(sn!('O', i), regs[i as usize].get_output(sn!('O')).id);
+    }
+    unit
+}
+
+/// TODO: R signal
+/// tested
+pub fn reg_bank_8b_8x() -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let muxes: Vec<IO> = (0..8).map(|_| unit.embed(mux_2n_1(3))).collect();
+    println!("muxes");
+    let dec = unit.embed(decoder_1_2n(3));
+    let regs: Vec<IO> = (0..8).map(|_| unit.embed(reg_8b())).collect();
+
+    // W signal
+    unit.io
+        .create_input(sn!('W'), dec.get_input(sn!('I')).ids.clone());
+    // WriteReg
+    unit.io
+        .create_input(sn!('S', 0), dec.get_input(sn!('S', 0)).ids.clone());
+    unit.io
+        .create_input(sn!('S', 1), dec.get_input(sn!('S', 1)).ids.clone());
+    unit.io
+        .create_input(sn!('S', 2), dec.get_input(sn!('S', 2)).ids.clone());
+    // ReadReg
+    unit.io.create_input(sn!('s', 0), vec![]);
+    unit.io.create_input(sn!('s', 1), vec![]);
+    unit.io.create_input(sn!('s', 2), vec![]);
+    // CLK
+    // unit.io.create_input(sn!('C'), vec![]);
+
+    for i in 0..8 {
+        unit.io.create_input(sn!('I', i), vec![]);
+
+        // ReadReg
+        unit.io
+            .add_inputs(sn!('s', 0), &muxes[i as usize].get_input(sn!('S', 0)).ids);
+        unit.io
+            .add_inputs(sn!('s', 1), &muxes[i as usize].get_input(sn!('S', 1)).ids);
+        unit.io
+            .add_inputs(sn!('s', 2), &muxes[i as usize].get_input(sn!('S', 2)).ids);
+        // Output
+        unit.io
+            .create_output(sn!('O', i), muxes[i as usize].get_output(sn!('O')).id);
+    }
+    for reg_idx in 0..8 {
+        for i in 0..8 {
+            // input to regs
+            unit.io
+                .add_inputs(sn!('I', i), &regs[reg_idx].get_input(sn!('I', i)).ids);
+            // regs to mux
+            unit.connect_to_input(
+                regs[reg_idx].get_output(sn!('O', i)).id,
+                muxes[i as usize].get_input(sn!('I', reg_idx as u8)),
+            );
+        }
+        // CLK
+        // unit.io
+        //     .add_inputs(sn!('C'), &regs[reg_idx].get_input(sn!('C')).ids);
+
+        // dec to regs
+        unit.connect_to_input(
+            dec.get_output(sn!('O', reg_idx as u8)).id,
+            regs[reg_idx].get_input(sn!('W')),
+        );
     }
     unit
 }

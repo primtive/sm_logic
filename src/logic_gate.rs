@@ -7,6 +7,7 @@ use crate::utils::Id;
 pub fn new_controller_id() -> Id {
     static mut ID: Id = 0;
     unsafe {
+        // dbg!(ID);
         ID += 1;
         ID
     }

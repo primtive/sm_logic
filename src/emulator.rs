@@ -68,7 +68,7 @@ impl Emulator {
                 &self
                     .parents
                     .get(&g.id)
-                    .unwrap()
+                    .unwrap_or_else(|| panic!("{} parent not found", g.id))
                     .iter()
                     .map(|&r| match r {
                         ParentRef::Gate(id) => {
