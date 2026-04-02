@@ -68,8 +68,8 @@ impl Emulator {
                 &self
                     .parents
                     .get(&g.id)
-                    .unwrap_or_else(|| panic!("{} parent not found", g.id))
-                    .iter()
+                    .map(|v| v.iter())
+                    .unwrap_or_default() // _else(|| panic!("{} parent not found", g.id))
                     .map(|&r| match r {
                         ParentRef::Gate(id) => {
                             self.unit.gates.iter().find(|&g| g.id == id).unwrap().active

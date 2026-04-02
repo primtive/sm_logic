@@ -116,6 +116,33 @@ impl LogicUnit {
             .map(|g| g.to_json(&pos, &Color::SINGLE))
             .collect()
     }
+    pub fn assemble_display(&mut self, pos: Pos, w: usize) -> Vec<Value> {
+        let mut items = Vec::with_capacity(self.gates.len() + self.io.inputs.len());
+        println!("start assembling at pos: {pos}");
+        let mut o_ids: Vec<u32> = Vec::new();
+
+        self.io.outputs.sort_by_key(|o| o.name);
+        self.io.outputs.iter().enumerate().for_each(|(idx, o)| {
+            if o.name.0 == 'd' {
+                let row = idx % w;
+                let col = idx / w;
+                println!("d r:{row} c:{col} name:{} id:{}", o.name, o.id);
+                let gate = self.gates.iter().find(|g| g.id == o.id).unwrap();
+                o_ids.push(o.id);
+                items.push(gate.to_json(
+                    &(pos + Pos::new(row as i32, -(col as i32), 0)),
+                    &Color::DISPLAY,
+                ));
+            }
+        });
+        self.gates.iter().for_each(|gate| {
+            if !o_ids.contains(&gate.id) {
+                items.push(gate.to_json(&(pos + Pos::new(0, 0, -1)), &Color::SINGLE));
+            }
+        });
+
+        items
+    }
     pub fn assemble_io(&mut self, pos: Pos, switches: bool) -> Vec<Value> {
         let mut items = Vec::with_capacity(self.gates.len() + self.io.inputs.len());
         let mut hidden_cnt: u32 = 0;

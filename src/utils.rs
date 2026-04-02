@@ -36,3 +36,13 @@ impl Display for SignalName {
         write!(f, "{}{}", self.0, self.1)
     }
 }
+
+pub const fn gen_test_rom_vec() -> [u32; 1024] {
+    let mut arr = [0u32; 1024];
+    let mut i = 0;
+    while i < 1024 {
+        arr[i] = (i * 4) as u32;
+        i += 1;
+    }
+    arr
+}

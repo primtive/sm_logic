@@ -2,9 +2,13 @@
 // metal 2 block id: 1016cafc-9f6b-40c9-8713-9019d399783f
 // switch id: 7cf717d7-d167-4f2d-a6e7-6b2c70aa3986
 
+use crate::utils::SignalName;
 use std::{fs::File, io::Write};
 
-use crate::{blueprint::Blueprint, emulator::Emulator, graph::run_graph, logic::*, pos::Pos};
+use crate::{
+    blueprint::Blueprint, emulator::Emulator, graph::run_graph, logic::*, pos::Pos,
+    utils::gen_test_rom_vec,
+};
 
 mod blueprint;
 mod color;
@@ -23,11 +27,24 @@ fn save_blueprint(json: String) {
     f.write_all(json.as_bytes()).unwrap();
 }
 
-fn bp() {
-    // run_graph(alu_8b_4m());
+fn graph() {
+    run_graph(alu_8b_4m());
+}
 
+fn bp() {
     let mut blueprint = Blueprint::new();
-    blueprint.place(sr_latch().assemble_io(Pos::default(), true));
+
+    let mut alu = alu_8b_4m();
+    let mut display = one_digit_dispay();
+    for i in 0..4 {
+        alu.connect_to_input(
+            alu.io.get_output(sn!('O', i)).id,
+            display.io.get_input(sn!('S', i)),
+        );
+    }
+
+    blueprint.place(alu.assemble_io(Pos::default(), true));
+    blueprint.place(display.assemble_display(Pos::new(0, -1, 0), 3));
     // blueprint.place(alu_8b_4m().assemble_io(Pos::new(0, 1, 0), true));
     // blueprint.place(adder_substractor_8b().assemble_io(Pos::new(0, 2, 0), true));
     let json = blueprint.to_json().to_string();
@@ -37,7 +54,7 @@ fn bp() {
 }
 fn emu() {
     Emulator::enable_mouse_mode();
-    let unit = reg_bank_8b_8x();
+    let unit = rom_4kb(&gen_test_rom_vec());
     let mut em = Emulator::new(unit);
 
     em.display();
@@ -47,5 +64,6 @@ fn emu() {
 }
 
 fn main() {
-    emu();
+    // emu();
+    bp();
 }

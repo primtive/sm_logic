@@ -13,6 +13,7 @@ impl Color {
     pub const INPUT2: Self = Self { r: 0, g: 0, b: 150 };
     pub const OUTPUT1: Self = Self { r: 255, g: 0, b: 0 };
     pub const OUTPUT2: Self = Self { r: 150, g: 0, b: 0 };
+    pub const DISPLAY: Self = Self { r: 0, g: 0, b: 0 };
     // const RED: Self = Self { r: 255, g: 0, b: 0 };
     pub fn to_string(&self) -> String {
         hex::encode_upper(&vec![self.r, self.g, self.b])

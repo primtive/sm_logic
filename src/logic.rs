@@ -1,3 +1,5 @@
+use eframe::glow::NAND;
+
 use crate::{
     logic_gate::LogicGateMode,
     logic_unit::{IO, LogicUnit},
@@ -382,6 +384,139 @@ pub fn reg_bank_8b_8x() -> LogicUnit {
             dec.get_output(sn!('O', reg_idx as u8)).id,
             regs[reg_idx].get_input(sn!('W')),
         );
+    }
+    unit
+}
+
+pub fn rom_4kb(data: &[u32]) -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let col_dec = unit.embed(decoder_1_2n(5));
+    let row_dec = unit.embed(decoder_1_2n(5));
+    for i in 2..12 {
+        // addr
+        if i > 6 {
+            unit.io
+                .create_input(sn!('A', i), col_dec.get_input(sn!('S', i - 7)).ids.clone());
+        } else {
+            unit.io
+                .create_input(sn!('A', i), row_dec.get_input(sn!('S', i - 2)).ids.clone());
+        }
+    }
+    unit.io
+        .create_input(sn!('R'), col_dec.get_input(sn!('I')).ids.clone());
+    unit.io
+        .add_inputs(sn!('R'), &row_dec.get_input(sn!('I')).ids.clone());
+    let output_ids: Vec<Id> = (0..32)
+        .map(|i| unit.add_gate_output(LogicGateMode::OR, false, sn!('O', i)))
+        .collect();
+    for i in 0..1024 {
+        let col = i / 32;
+        let row = i % 32;
+        let value = data.get(i).unwrap_or(&0);
+        let and = unit.add_gate(LogicGateMode::AND, false);
+        unit.connect(col_dec.get_output(sn!('O', col as u8)).id, and);
+        unit.connect(row_dec.get_output(sn!('O', row as u8)).id, and);
+        (0..32).for_each(|i| {
+            let bit = (value >> i) & 1 == 1;
+            if bit {
+                unit.connect(and, output_ids[i]);
+            }
+        });
+    }
+    unit
+}
+
+pub fn one_digit_dispay() -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    #[rustfmt::skip]
+    const DIGITS: [[u8; 15]; 10] = [
+      [
+          1, 1, 1,
+          1, 0, 1,
+          1, 0, 1,
+          1, 0, 1,
+          1, 1, 1
+      ],
+      [
+          0, 1, 0,
+          1, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0
+      ],
+      [
+          0, 1, 0,
+          1, 0, 1,
+          0, 0, 1,
+          0, 1, 0,
+          1, 1, 1
+      ],
+      [
+          1, 1, 0,
+          0, 0, 1,
+          0, 1, 0,
+          0, 0, 1,
+          1, 1, 0,
+      ],
+      [
+          1, 0, 1,
+          1, 0, 1,
+          1, 1, 1,
+          0, 0, 1,
+          0, 0, 1
+      ],
+      [
+          1, 1, 1,
+          1, 0, 0,
+          1, 1, 1,
+          0, 0, 1,
+          1, 1, 0
+      ],
+      [
+          1, 1, 1,
+          1, 0, 0,
+          1, 1, 1,
+          1, 0, 1,
+          1, 1, 1
+      ],
+      [
+          1, 1, 1,
+          0, 0, 1,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0
+      ],
+      [
+          1, 1, 1,
+          1, 0, 1,
+          0, 1, 2,
+          1, 0, 1,
+          1, 1, 1
+      ],
+      [
+          1, 1, 1,
+          1, 0, 1,
+          1, 1, 1,
+          0, 0, 1,
+          1, 1, 1
+      ],
+    ];
+    let output_ids: Vec<Id> = (0..15)
+        .map(|i| unit.add_gate_output(LogicGateMode::OR, false, sn!('d', i)))
+        .collect();
+    let dec = unit.embed(decoder_1_2n(4));
+    unit.io
+        .create_input(sn!('I'), dec.get_input(sn!('I')).ids.clone());
+    for i in 0..4 {
+        unit.io
+            .create_input(sn!('S', i), dec.get_input(sn!('S', i)).ids.clone());
+    }
+    for (n, d) in DIGITS.iter().enumerate() {
+        for i in 0..15 {
+            if d[i] == 1 {
+                unit.connect(dec.get_output(sn!('O', n as u8)).id, output_ids[i]);
+            }
+        }
     }
     unit
 }
