@@ -95,14 +95,6 @@ impl LogicUnit {
             self.connect(from_id, id);
         });
     }
-    // pub fn connect_io(&mut self, input: &mut Input, output: &Output) {
-    //     assert_eq!(input.len(), output.bits.len());
-    //     (0..input.bits.len()).for_each(|i| {
-    //         input.bits[i]
-    //             .iter()
-    //             .for_each(|&id| self.connect_gates(id, output.bits[i]));
-    //     });
-    // }
     pub fn embed(&mut self, mut unit: LogicUnit) -> IO {
         self.gates.append(&mut unit.gates);
         unit.io
@@ -110,7 +102,7 @@ impl LogicUnit {
     fn get(&mut self, id: u32) -> Option<&LogicGate> {
         self.gates.iter().find(|g| g.id == id)
     }
-    fn assemble_single(&self, pos: Pos) -> Vec<Value> {
+    pub fn assemble_single(&self, pos: Pos) -> Vec<Value> {
         self.gates
             .iter()
             .map(|g| g.to_json(&pos, &Color::SINGLE))

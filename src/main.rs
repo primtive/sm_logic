@@ -35,16 +35,40 @@ fn bp() {
     let mut blueprint = Blueprint::new();
 
     let mut alu = alu_8b_4m();
-    let mut display = one_digit_dispay();
-    for i in 0..4 {
+    let mut bcd_conv = bin2bcd8b();
+    let mut digit1 = digit_dispay();
+    let mut digit2 = digit_dispay();
+    let mut digit3 = digit_dispay();
+    for i in 0..8 {
         alu.connect_to_input(
             alu.io.get_output(sn!('O', i)).id,
-            display.io.get_input(sn!('S', i)),
+            bcd_conv.io.get_input(sn!('I', i)),
         );
     }
+    for i in 0..4 {
+        bcd_conv.connect_to_input(
+            bcd_conv.io.get_output(sn!('O', i)).id,
+            digit1.io.get_input(sn!('S', i)),
+        );
+        bcd_conv.connect_to_input(
+            bcd_conv.io.get_output(sn!('T', i)).id,
+            digit2.io.get_input(sn!('S', i)),
+        );
+    }
+    bcd_conv.connect_to_input(
+        bcd_conv.io.get_output(sn!('H', 0)).id,
+        digit3.io.get_input(sn!('S', 0)),
+    );
+    bcd_conv.connect_to_input(
+        bcd_conv.io.get_output(sn!('H', 1)).id,
+        digit3.io.get_input(sn!('S', 1)),
+    );
 
     blueprint.place(alu.assemble_io(Pos::default(), true));
-    blueprint.place(display.assemble_display(Pos::new(0, -1, 0), 3));
+    blueprint.place(bcd_conv.assemble_single(Pos::new(0, 1, 0)));
+    blueprint.place(digit1.assemble_display(Pos::new(0, -1, 0), 3));
+    blueprint.place(digit2.assemble_display(Pos::new(-4, -1, 0), 3));
+    blueprint.place(digit3.assemble_display(Pos::new(-8, -1, 0), 3));
     // blueprint.place(alu_8b_4m().assemble_io(Pos::new(0, 1, 0), true));
     // blueprint.place(adder_substractor_8b().assemble_io(Pos::new(0, 2, 0), true));
     let json = blueprint.to_json().to_string();
@@ -54,7 +78,7 @@ fn bp() {
 }
 fn emu() {
     Emulator::enable_mouse_mode();
-    let unit = rom_4kb(&gen_test_rom_vec());
+    let unit = bin2bcd8b();
     let mut em = Emulator::new(unit);
 
     em.display();

@@ -426,7 +426,7 @@ pub fn rom_4kb(data: &[u32]) -> LogicUnit {
     unit
 }
 
-pub fn one_digit_dispay() -> LogicUnit {
+pub fn digit_dispay() -> LogicUnit {
     let mut unit = LogicUnit::new();
     #[rustfmt::skip]
     const DIGITS: [[u8; 15]; 10] = [
@@ -508,8 +508,9 @@ pub fn one_digit_dispay() -> LogicUnit {
     unit.io
         .create_input(sn!('I'), dec.get_input(sn!('I')).ids.clone());
     for i in 0..4 {
-        unit.io
-            .create_input(sn!('S', i), dec.get_input(sn!('S', i)).ids.clone());
+        let t = unit.add_gate(LogicGateMode::AND, false);
+        unit.io.create_input(sn!('S', i), vec![t]);
+        unit.connect_to_input(t, dec.get_input(sn!('S', i)));
     }
     for (n, d) in DIGITS.iter().enumerate() {
         for i in 0..15 {
@@ -518,5 +519,126 @@ pub fn one_digit_dispay() -> LogicUnit {
             }
         }
     }
+    unit
+}
+
+/// tested
+fn cond_plus_3() -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let or1 = unit.add_gate(LogicGateMode::OR, false);
+    let and1 = unit.add_gate(LogicGateMode::AND, false);
+    let or2 = unit.add_gate(LogicGateMode::OR, false);
+    let xor1 = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 0));
+    let and2 = unit.add_gate(LogicGateMode::AND, false);
+    let not = unit.add_gate(LogicGateMode::NAND, true);
+    let and3 = unit.add_gate(LogicGateMode::AND, false);
+    let xor2 = unit.add_gate(LogicGateMode::XOR, false);
+    let ha_c = unit.add_gate(LogicGateMode::AND, false);
+    let ha_s = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 2));
+    let xor3 = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 1));
+    let xor4 = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 3));
+    unit.io.create_input(sn!('A', 0), vec![or1, xor1]);
+    unit.io.create_input(sn!('A', 1), vec![or1, not, xor3]);
+    unit.io.create_input(sn!('A', 2), vec![and1, ha_c, ha_s]);
+    unit.io.create_input(sn!('A', 3), vec![or2, xor4]);
+    unit.connect(or1, and1);
+    unit.connect(and1, or2);
+    unit.connect(or2, xor1);
+    unit.connect(or2, xor2);
+    unit.connect(or2, and2);
+    unit.connect(xor1, and2);
+    unit.connect(and2, xor3);
+    unit.connect(and2, and3);
+    unit.connect(not, and3);
+    unit.connect(and3, xor2);
+    unit.connect(xor2, ha_c);
+    unit.connect(xor2, ha_s);
+    unit.connect(ha_c, xor4);
+    unit
+}
+
+/// double-dabble implementation
+pub fn bin2bcd8b() -> LogicUnit {
+    let mut unit = LogicUnit::new();
+    let pluses: Vec<IO> = (0..7).map(|_| unit.embed(cond_plus_3())).collect();
+    let o0 = unit.add_gate_output(LogicGateMode::AND, false, sn!('O', 0));
+    unit.io.create_input(sn!('I', 0), vec![o0]);
+    unit.io
+        .create_input(sn!('I', 1), pluses[4].get_input(sn!('A', 0)).ids.clone());
+    unit.io
+        .create_input(sn!('I', 2), pluses[3].get_input(sn!('A', 0)).ids.clone());
+    unit.io
+        .create_input(sn!('I', 3), pluses[2].get_input(sn!('A', 0)).ids.clone());
+    unit.io
+        .create_input(sn!('I', 4), pluses[1].get_input(sn!('A', 0)).ids.clone());
+    unit.io
+        .create_input(sn!('I', 5), pluses[0].get_input(sn!('A', 0)).ids.clone());
+    unit.io
+        .create_input(sn!('I', 6), pluses[0].get_input(sn!('A', 1)).ids.clone());
+    unit.io
+        .create_input(sn!('I', 7), pluses[0].get_input(sn!('A', 2)).ids.clone());
+
+    for i in 0..4 {
+        unit.connect_to_input(
+            pluses[i].get_output(sn!('Q', 0)).id,
+            pluses[i + 1].get_input(sn!('A', 1)),
+        );
+        unit.connect_to_input(
+            pluses[i].get_output(sn!('Q', 1)).id,
+            pluses[i + 1].get_input(sn!('A', 2)),
+        );
+        unit.connect_to_input(
+            pluses[i].get_output(sn!('Q', 2)).id,
+            pluses[i + 1].get_input(sn!('A', 3)),
+        );
+    }
+    unit.connect_to_input(
+        pluses[0].get_output(sn!('Q', 3)).id,
+        pluses[5].get_input(sn!('A', 2)),
+    );
+    unit.connect_to_input(
+        pluses[1].get_output(sn!('Q', 3)).id,
+        pluses[5].get_input(sn!('A', 1)),
+    );
+    unit.connect_to_input(
+        pluses[2].get_output(sn!('Q', 3)).id,
+        pluses[5].get_input(sn!('A', 0)),
+    );
+    unit.connect_to_input(
+        pluses[3].get_output(sn!('Q', 3)).id,
+        pluses[6].get_input(sn!('A', 0)),
+    );
+
+    unit.connect_to_input(
+        pluses[5].get_output(sn!('Q', 2)).id,
+        pluses[6].get_input(sn!('A', 3)),
+    );
+    unit.connect_to_input(
+        pluses[5].get_output(sn!('Q', 1)).id,
+        pluses[6].get_input(sn!('A', 2)),
+    );
+    unit.connect_to_input(
+        pluses[5].get_output(sn!('Q', 0)).id,
+        pluses[6].get_input(sn!('A', 1)),
+    );
+    unit.io
+        .create_output(sn!('O', 1), pluses[4].get_output(sn!('Q', 0)).id);
+    unit.io
+        .create_output(sn!('O', 2), pluses[4].get_output(sn!('Q', 1)).id);
+    unit.io
+        .create_output(sn!('O', 3), pluses[4].get_output(sn!('Q', 2)).id);
+    unit.io
+        .create_output(sn!('T', 0), pluses[4].get_output(sn!('Q', 3)).id);
+    unit.io
+        .create_output(sn!('T', 1), pluses[6].get_output(sn!('Q', 0)).id);
+    unit.io
+        .create_output(sn!('T', 2), pluses[6].get_output(sn!('Q', 1)).id);
+    unit.io
+        .create_output(sn!('T', 3), pluses[6].get_output(sn!('Q', 2)).id);
+    unit.io
+        .create_output(sn!('H', 0), pluses[6].get_output(sn!('Q', 3)).id);
+    unit.io
+        .create_output(sn!('H', 1), pluses[5].get_output(sn!('Q', 3)).id);
+
     unit
 }
