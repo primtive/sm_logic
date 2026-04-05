@@ -235,7 +235,7 @@ impl LogicUnit {
             if i != 0 && input.name.0 != self.io.inputs[i - 1].name.0 {
                 chcolor = !chcolor;
             }
-            let gate = LogicGate::new(LogicGateMode::OR, false);
+            let gate = LogicGate::new(LogicGateMode::Or, false);
             let color = match chcolor {
                 true => &Color::INPUT1,
                 false => &Color::INPUT2,
@@ -373,7 +373,7 @@ impl LogicUnit {
                 &Color::INPUT2
             };
 
-            let mut in_gate = LogicGate::new(LogicGateMode::AND, false);
+            let mut in_gate = LogicGate::new(LogicGateMode::And, false);
             for &target_id in &input.ids {
                 in_gate.add_child(target_id);
             }

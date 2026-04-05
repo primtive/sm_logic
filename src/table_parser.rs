@@ -103,12 +103,12 @@ impl LogicUnit {
                                 io = unit.embed(dff());
                             } else {
                                 let mode = match record[2] {
-                                    "$_AND_" => LogicGateMode::AND,
-                                    "$_OR_" => LogicGateMode::OR,
-                                    "$_NAND_" | "$_NOT_" => LogicGateMode::NAND,
-                                    "$_NOR_" => LogicGateMode::NOR,
-                                    "$_XOR_" => LogicGateMode::XOR,
-                                    "$_XNOR_" => LogicGateMode::XNOR,
+                                    "$_AND_" => LogicGateMode::And,
+                                    "$_OR_" => LogicGateMode::Or,
+                                    "$_NAND_" | "$_NOT_" => LogicGateMode::Nand,
+                                    "$_NOR_" => LogicGateMode::Nor,
+                                    "$_XOR_" => LogicGateMode::Xor,
+                                    "$_XNOR_" => LogicGateMode::Xnor,
                                     _ => panic!("incorrect gate mode: {}", record[2]),
                                 };
                                 io = unit.embed_gate(LogicGate::new(mode, false));

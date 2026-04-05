@@ -13,8 +13,8 @@ use crate::{
 pub fn ticker() -> LogicUnit {
     let mut ticker = LogicUnit::new();
 
-    let h = ticker.add_gate(LogicGateMode::AND, false);
-    let o = ticker.add_gate_output(LogicGateMode::XOR, false, sn!('i'));
+    let h = ticker.add_gate(LogicGateMode::And, false);
+    let o = ticker.add_gate_output(LogicGateMode::Xor, false, sn!('i'));
     ticker.io.create_input(sn!('i'), vec![o, h]);
     ticker.connect(h, o);
 
@@ -24,12 +24,12 @@ pub fn ticker() -> LogicUnit {
 /// D trigger
 pub fn dff() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let nand1 = unit.add_gate_output(LogicGateMode::NAND, false, sn!('Q'));
-    let nand2 = unit.add_gate(LogicGateMode::NAND, false);
-    let nand3 = unit.add_gate(LogicGateMode::NAND, false);
-    let nand4 = unit.add_gate(LogicGateMode::NAND, false);
-    let h = unit.add_gate(LogicGateMode::AND, false);
-    let not = unit.add_gate(LogicGateMode::NAND, true);
+    let nand1 = unit.add_gate_output(LogicGateMode::Nand, false, sn!('Q'));
+    let nand2 = unit.add_gate(LogicGateMode::Nand, false);
+    let nand3 = unit.add_gate(LogicGateMode::Nand, false);
+    let nand4 = unit.add_gate(LogicGateMode::Nand, false);
+    let h = unit.add_gate(LogicGateMode::And, false);
+    let not = unit.add_gate(LogicGateMode::Nand, true);
     unit.connect(nand1, h);
     unit.connect(h, nand2);
     unit.connect(nand2, nand1);
@@ -43,15 +43,15 @@ pub fn dff() -> LogicUnit {
 /// D trigger, 1 tick CLK (for SM)
 pub fn dff_1tick() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let nand1 = unit.add_gate_output(LogicGateMode::NAND, false, sn!('Q'));
-    let nand2 = unit.add_gate(LogicGateMode::NAND, false);
-    let nand3 = unit.add_gate(LogicGateMode::NAND, false);
-    let nand4 = unit.add_gate(LogicGateMode::NAND, false);
-    let h = unit.add_gate(LogicGateMode::AND, false);
-    let not = unit.add_gate(LogicGateMode::NAND, true);
-    let delay1 = unit.add_gate(LogicGateMode::AND, false);
-    let delay2 = unit.add_gate(LogicGateMode::AND, false);
-    let delay3 = unit.add_gate(LogicGateMode::OR, false);
+    let nand1 = unit.add_gate_output(LogicGateMode::Nand, false, sn!('Q'));
+    let nand2 = unit.add_gate(LogicGateMode::Nand, false);
+    let nand3 = unit.add_gate(LogicGateMode::Nand, false);
+    let nand4 = unit.add_gate(LogicGateMode::Nand, false);
+    let h = unit.add_gate(LogicGateMode::And, false);
+    let not = unit.add_gate(LogicGateMode::Nand, true);
+    let delay1 = unit.add_gate(LogicGateMode::And, false);
+    let delay2 = unit.add_gate(LogicGateMode::And, false);
+    let delay3 = unit.add_gate(LogicGateMode::Or, false);
     unit.connect(nand1, h);
     unit.connect(h, nand2);
     unit.connect(nand2, nand1);
@@ -73,11 +73,11 @@ pub fn dff_1tick() -> LogicUnit {
 /// tested
 pub fn full_adder() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let xor1 = unit.add_gate(LogicGateMode::XOR, false);
-    let and1 = unit.add_gate(LogicGateMode::AND, false);
-    let and2 = unit.add_gate(LogicGateMode::AND, false);
-    let xor2 = unit.add_gate_output(LogicGateMode::XOR, false, sn!('S'));
-    let or = unit.add_gate_output(LogicGateMode::OR, false, sn!('C'));
+    let xor1 = unit.add_gate(LogicGateMode::Xor, false);
+    let and1 = unit.add_gate(LogicGateMode::And, false);
+    let and2 = unit.add_gate(LogicGateMode::And, false);
+    let xor2 = unit.add_gate_output(LogicGateMode::Xor, false, sn!('S'));
+    let or = unit.add_gate_output(LogicGateMode::Or, false, sn!('C'));
     unit.connect(xor1, xor2);
     unit.connect(xor1, and1);
     unit.connect(and1, or);
@@ -103,7 +103,7 @@ pub fn adder_substractor_8b() -> LogicUnit {
         let s = io.get_output(sn!('S')).id;
         let cout = io.get_output(sn!('C')).id;
 
-        let xor = unit.add_gate(LogicGateMode::XOR, false);
+        let xor = unit.add_gate(LogicGateMode::Xor, false);
         b.ids.iter().for_each(|&id| unit.connect(xor, id));
         unit.io.create_input(sn!('A', idx), a.ids.clone());
         unit.io.create_input(sn!('B', idx), vec![xor]);
@@ -125,10 +125,10 @@ pub fn adder_substractor_8b() -> LogicUnit {
 /// tested
 pub fn mux_2_1() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let or = unit.add_gate_output(LogicGateMode::OR, false, sn!('O'));
-    let and0 = unit.add_gate(LogicGateMode::AND, false);
-    let and1 = unit.add_gate(LogicGateMode::AND, false);
-    let not = unit.add_gate(LogicGateMode::NAND, true);
+    let or = unit.add_gate_output(LogicGateMode::Or, false, sn!('O'));
+    let and0 = unit.add_gate(LogicGateMode::And, false);
+    let and1 = unit.add_gate(LogicGateMode::And, false);
+    let not = unit.add_gate(LogicGateMode::Nand, true);
     unit.connect(and0, or);
     unit.connect(and1, or);
     unit.connect(not, and0);
@@ -140,9 +140,9 @@ pub fn mux_2_1() -> LogicUnit {
 
 pub fn sr_latch() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let q = unit.add_gate_output(LogicGateMode::NOR, false, sn!('Q'));
-    let nq = unit.add_gate(LogicGateMode::NOR, true);
-    let h = unit.add_gate(LogicGateMode::AND, false);
+    let q = unit.add_gate_output(LogicGateMode::Nor, false, sn!('Q'));
+    let nq = unit.add_gate(LogicGateMode::Nor, true);
+    let h = unit.add_gate(LogicGateMode::And, false);
     unit.connect(q, nq);
     unit.connect(nq, h);
     unit.connect(h, q);
@@ -155,13 +155,13 @@ pub fn sr_latch() -> LogicUnit {
 /// tested
 pub fn mux_4_1() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let or = unit.add_gate_output(LogicGateMode::OR, false, sn!('O'));
-    let and0 = unit.add_gate(LogicGateMode::AND, false);
-    let and1 = unit.add_gate(LogicGateMode::AND, false);
-    let and2 = unit.add_gate(LogicGateMode::AND, false);
-    let and3 = unit.add_gate(LogicGateMode::AND, false);
-    let not0 = unit.add_gate(LogicGateMode::NAND, true);
-    let not1 = unit.add_gate(LogicGateMode::NAND, true);
+    let or = unit.add_gate_output(LogicGateMode::Or, false, sn!('O'));
+    let and0 = unit.add_gate(LogicGateMode::And, false);
+    let and1 = unit.add_gate(LogicGateMode::And, false);
+    let and2 = unit.add_gate(LogicGateMode::And, false);
+    let and3 = unit.add_gate(LogicGateMode::And, false);
+    let not0 = unit.add_gate(LogicGateMode::Nand, true);
+    let not1 = unit.add_gate(LogicGateMode::Nand, true);
     unit.connect(and0, or);
     unit.connect(and1, or);
     unit.connect(and2, or);
@@ -183,12 +183,12 @@ pub fn mux_2n_1(n: usize) -> LogicUnit {
     let num_inputs = 1 << n;
 
     // Output OR gate
-    let or = unit.add_gate_output(LogicGateMode::OR, false, sn!('O'));
+    let or = unit.add_gate_output(LogicGateMode::Or, false, sn!('O'));
 
     // AND gates for each data input
     let mut and_ids = Vec::with_capacity(num_inputs);
     for _ in 0..num_inputs {
-        let and = unit.add_gate(LogicGateMode::AND, false);
+        let and = unit.add_gate(LogicGateMode::And, false);
         and_ids.push(and);
         unit.connect(and, or);
     }
@@ -196,7 +196,7 @@ pub fn mux_2n_1(n: usize) -> LogicUnit {
     // NOT gates (inverters) for each select line
     let mut not_ids = Vec::with_capacity(n);
     for _ in 0..n {
-        let not = unit.add_gate(LogicGateMode::NAND, true); // inverter
+        let not = unit.add_gate(LogicGateMode::Nand, true); // inverter
         not_ids.push(not);
     }
 
@@ -241,14 +241,14 @@ pub fn decoder_1_2n(n: usize) -> LogicUnit {
     // NOT gates for each select line (inverters)
     let mut not_gates = Vec::with_capacity(n);
     for _ in 0..n {
-        let not = unit.add_gate(LogicGateMode::NAND, true);
+        let not = unit.add_gate(LogicGateMode::Nand, true);
         not_gates.push(not);
     }
 
     // AND gates for each output – these are the outputs of the decoder
     let mut and_gates = Vec::with_capacity(num_outputs);
     for i in 0..num_outputs {
-        let and = unit.add_gate_output(LogicGateMode::AND, false, sn!('O', i as u8));
+        let and = unit.add_gate_output(LogicGateMode::And, false, sn!('O', i as u8));
         and_gates.push(and);
     }
 
@@ -292,10 +292,10 @@ pub fn alu_8b_4m() -> LogicUnit {
     let muxes: Vec<IO> = (0..n).map(|_| unit.embed(mux_4_1())).collect();
     let arithmetic = unit.embed(adder_substractor_8b());
     let xors: Vec<Id> = (0..n)
-        .map(|_| unit.add_gate(LogicGateMode::XOR, false))
+        .map(|_| unit.add_gate(LogicGateMode::Xor, false))
         .collect();
     let nands: Vec<Id> = (0..n)
-        .map(|_| unit.add_gate(LogicGateMode::NAND, false))
+        .map(|_| unit.add_gate(LogicGateMode::Nand, false))
         .collect();
 
     // opcode
@@ -334,13 +334,13 @@ pub fn alu_8b_4m() -> LogicUnit {
 /// rs trigger
 pub fn reg_1b() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let nand1 = unit.add_gate_output(LogicGateMode::NAND, false, sn!('O'));
-    let nand2 = unit.add_gate(LogicGateMode::NAND, true);
-    let h1 = unit.add_gate(LogicGateMode::AND, true);
-    let h2 = unit.add_gate(LogicGateMode::AND, true);
-    let nand3 = unit.add_gate(LogicGateMode::NAND, true);
-    let nand4 = unit.add_gate(LogicGateMode::NAND, true);
-    let not = unit.add_gate(LogicGateMode::NAND, true);
+    let nand1 = unit.add_gate_output(LogicGateMode::Nand, false, sn!('O'));
+    let nand2 = unit.add_gate(LogicGateMode::Nand, true);
+    let h1 = unit.add_gate(LogicGateMode::And, true);
+    let h2 = unit.add_gate(LogicGateMode::And, true);
+    let nand3 = unit.add_gate(LogicGateMode::Nand, true);
+    let nand4 = unit.add_gate(LogicGateMode::Nand, true);
+    let not = unit.add_gate(LogicGateMode::Nand, true);
     unit.io.create_input(sn!('I'), vec![nand4, not]);
     unit.io.create_input(sn!('W'), vec![nand3, nand4]);
     unit.connect(nand4, nand1);
@@ -456,13 +456,13 @@ pub fn rom_4kb(data: &[u32]) -> LogicUnit {
     unit.io
         .add_inputs(sn!('R'), &row_dec.get_input(sn!('I')).ids.clone());
     let output_ids: Vec<Id> = (0..32)
-        .map(|i| unit.add_gate_output(LogicGateMode::OR, false, sn!('O', i)))
+        .map(|i| unit.add_gate_output(LogicGateMode::Or, false, sn!('O', i)))
         .collect();
     for i in 0..1024 {
         let col = i / 32;
         let row = i % 32;
         let value = data.get(i).unwrap_or(&0);
-        let and = unit.add_gate(LogicGateMode::AND, false);
+        let and = unit.add_gate(LogicGateMode::And, false);
         unit.connect(col_dec.get_output(sn!('O', col as u8)).id, and);
         unit.connect(row_dec.get_output(sn!('O', row as u8)).id, and);
         (0..32).for_each(|i| {
@@ -551,13 +551,13 @@ pub fn digit_dispay() -> LogicUnit {
       ],
     ];
     let output_ids: Vec<Id> = (0..15)
-        .map(|i| unit.add_gate_output(LogicGateMode::OR, false, sn!('d', i)))
+        .map(|i| unit.add_gate_output(LogicGateMode::Or, false, sn!('d', i)))
         .collect();
     let dec = unit.embed(decoder_1_2n(4));
     unit.io
         .create_input(sn!('I'), dec.get_input(sn!('I')).ids.clone());
     for i in 0..4 {
-        let t = unit.add_gate(LogicGateMode::AND, false);
+        let t = unit.add_gate(LogicGateMode::And, false);
         unit.io.create_input(sn!('S', i), vec![t]);
         unit.connect_to_input(t, dec.get_input(sn!('S', i)));
     }
@@ -574,18 +574,18 @@ pub fn digit_dispay() -> LogicUnit {
 /// tested
 fn cond_plus_3() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let or1 = unit.add_gate(LogicGateMode::OR, false);
-    let and1 = unit.add_gate(LogicGateMode::AND, false);
-    let or2 = unit.add_gate(LogicGateMode::OR, false);
-    let xor1 = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 0));
-    let and2 = unit.add_gate(LogicGateMode::AND, false);
-    let not = unit.add_gate(LogicGateMode::NAND, true);
-    let and3 = unit.add_gate(LogicGateMode::AND, false);
-    let xor2 = unit.add_gate(LogicGateMode::XOR, false);
-    let ha_c = unit.add_gate(LogicGateMode::AND, false);
-    let ha_s = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 2));
-    let xor3 = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 1));
-    let xor4 = unit.add_gate_output(LogicGateMode::XOR, false, sn!('Q', 3));
+    let or1 = unit.add_gate(LogicGateMode::Or, false);
+    let and1 = unit.add_gate(LogicGateMode::And, false);
+    let or2 = unit.add_gate(LogicGateMode::Or, false);
+    let xor1 = unit.add_gate_output(LogicGateMode::Xor, false, sn!('Q', 0));
+    let and2 = unit.add_gate(LogicGateMode::And, false);
+    let not = unit.add_gate(LogicGateMode::Nand, true);
+    let and3 = unit.add_gate(LogicGateMode::And, false);
+    let xor2 = unit.add_gate(LogicGateMode::Xor, false);
+    let ha_c = unit.add_gate(LogicGateMode::And, false);
+    let ha_s = unit.add_gate_output(LogicGateMode::Xor, false, sn!('Q', 2));
+    let xor3 = unit.add_gate_output(LogicGateMode::Xor, false, sn!('Q', 1));
+    let xor4 = unit.add_gate_output(LogicGateMode::Xor, false, sn!('Q', 3));
     unit.io.create_input(sn!('A', 0), vec![or1, xor1]);
     unit.io.create_input(sn!('A', 1), vec![or1, not, xor3]);
     unit.io.create_input(sn!('A', 2), vec![and1, ha_c, ha_s]);
@@ -610,7 +610,7 @@ fn cond_plus_3() -> LogicUnit {
 pub fn bin2bcd8b() -> LogicUnit {
     let mut unit = LogicUnit::new();
     let pluses: Vec<IO> = (0..7).map(|_| unit.embed(cond_plus_3())).collect();
-    let o0 = unit.add_gate_output(LogicGateMode::AND, false, sn!('O', 0));
+    let o0 = unit.add_gate_output(LogicGateMode::And, false, sn!('O', 0));
     unit.io.create_input(sn!('I', 0), vec![o0]);
     unit.io
         .create_input(sn!('I', 1), pluses[4].get_input(sn!('A', 0)).ids.clone());
@@ -699,7 +699,7 @@ pub fn counter_8b() -> LogicUnit {
     unit.connect_io(&reg, &adder, 'O', 'A', 8);
     unit.connect_io(&adder, &reg, 'O', 'I', 8);
     // stub for K
-    let h = unit.add_gate(LogicGateMode::AND, false);
+    let h = unit.add_gate(LogicGateMode::And, false);
     unit.connect_to_input(h, adder.get_input(sn!('K')));
 
     unit.io.create_input(
@@ -729,9 +729,9 @@ pub fn cla_adder_4b() -> LogicUnit {
     let pgs: Vec<(Id, Id)> = (0..4)
         .map(|i| {
             // generate
-            let g = unit.add_gate(LogicGateMode::NAND, true);
+            let g = unit.add_gate(LogicGateMode::Nand, true);
             // propagate
-            let p = unit.add_gate(LogicGateMode::NOR, true);
+            let p = unit.add_gate(LogicGateMode::Nor, true);
 
             unit.io.create_input(sn!('A', i), vec![p, g]);
             unit.io.create_input(sn!('B', i), vec![p, g]);
@@ -740,13 +740,13 @@ pub fn cla_adder_4b() -> LogicUnit {
         .collect();
 
     let xors: Vec<Id> = (0..7)
-        .map(|_| unit.add_gate(LogicGateMode::XOR, false))
+        .map(|_| unit.add_gate(LogicGateMode::Xor, false))
         .collect();
     let ands: Vec<Id> = (0..15)
-        .map(|_| unit.add_gate(LogicGateMode::XOR, false))
+        .map(|_| unit.add_gate(LogicGateMode::Xor, false))
         .collect();
     let ors: Vec<Id> = (0..8)
-        .map(|_| unit.add_gate(LogicGateMode::XOR, false))
+        .map(|_| unit.add_gate(LogicGateMode::Xor, false))
         .collect();
 
     unit.io

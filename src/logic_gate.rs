@@ -22,12 +22,12 @@ pub struct LogicGate {
 #[repr(u8)]
 #[derive(Clone, Copy)]
 pub enum LogicGateMode {
-    AND,
-    OR,
-    XOR,
-    NAND,
-    NOR,
-    XNOR,
+    And,
+    Or,
+    Xor,
+    Nand,
+    Nor,
+    Xnor,
 }
 impl LogicGate {
     const SHAPEID: &str = "9f0f56e8-2c31-4d83-996c-d00a9b296c3f";
@@ -63,12 +63,12 @@ impl LogicGate {
             return false;
         }
         match self.mode {
-            LogicGateMode::AND => parents.iter().all(|&x| x),
-            LogicGateMode::OR => parents.iter().any(|&x| x),
-            LogicGateMode::XOR => parents.iter().fold(false, |acc, &x| acc ^ x),
-            LogicGateMode::NAND => !parents.iter().all(|&x| x),
-            LogicGateMode::NOR => !parents.iter().any(|&x| x),
-            LogicGateMode::XNOR => !parents.iter().fold(false, |acc, &x| acc ^ x),
+            LogicGateMode::And => parents.iter().all(|&x| x),
+            LogicGateMode::Or => parents.iter().any(|&x| x),
+            LogicGateMode::Xor => parents.iter().fold(false, |acc, &x| acc ^ x),
+            LogicGateMode::Nand => !parents.iter().all(|&x| x),
+            LogicGateMode::Nor => !parents.iter().any(|&x| x),
+            LogicGateMode::Xnor => !parents.iter().fold(false, |acc, &x| acc ^ x),
         }
     }
 }
