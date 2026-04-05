@@ -5,7 +5,7 @@
 use crate::{logic_unit::LogicUnit, utils::SignalName};
 use std::{fs::File, io::Write};
 
-use crate::{blueprint::Blueprint, graph::run_graph, logic::*, pos::Pos};
+use crate::{blueprint::Blueprint, logic::*, pos::Pos};
 
 mod blueprint;
 mod color;
@@ -76,8 +76,11 @@ fn bp() {
 }
 
 fn main() {
-    let unit = LogicUnit::from_table("/home/alexey/dev/learn/verilog/test.table");
+    let unit = LogicUnit::from_table("/home/alexey/dev/learn/verilog/cla_adder_64b.table");
+    // let unit = alu_8b_4m();
+
     // emu(unit);
+    unit.save_dot("unit.dot");
 
     bp();
 }

@@ -1,3 +1,5 @@
+use std::fmt::{Display, write};
+
 use serde_json::{Value, json};
 
 use crate::color::Color;
@@ -28,6 +30,22 @@ pub enum LogicGateMode {
     Nand,
     Nor,
     Xnor,
+}
+impl Display for LogicGateMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                LogicGateMode::And => "and",
+                LogicGateMode::Or => "or",
+                LogicGateMode::Xor => "xor",
+                LogicGateMode::Nand => "nand",
+                LogicGateMode::Nor => "nor",
+                LogicGateMode::Xnor => "xnor",
+            }
+        )
+    }
 }
 impl LogicGate {
     const SHAPEID: &str = "9f0f56e8-2c31-4d83-996c-d00a9b296c3f";

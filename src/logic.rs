@@ -1,7 +1,3 @@
-use std::iter::once;
-
-use eframe::glow::NAND;
-
 use crate::{
     logic_gate::LogicGateMode,
     logic_unit::{IO, LogicUnit},
