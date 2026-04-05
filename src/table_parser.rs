@@ -54,7 +54,7 @@ impl LogicUnit {
             .chunk_by(|r| r[1].starts_with('$'))
         {
             if !k {
-                // let headers = section.collect::<Vec<Vec<_>>>();
+                // headers
                 for header in section {
                     if header[5].starts_with('{') {
                         header[5]
@@ -120,7 +120,9 @@ impl LogicUnit {
                         match record[4] {
                             "in" => {
                                 let ids = &mut io.get_input(pin).ids.clone();
-                                if record[5].starts_with('$') {
+                                if !inputs
+                                    .contains_key(record[5].split_whitespace().nth(0).unwrap())
+                                {
                                     wires
                                         .entry(record[5].to_string())
                                         .or_default()
@@ -142,7 +144,9 @@ impl LogicUnit {
                             }
                             "out" => {
                                 let id = io.get_output(pin).id;
-                                if record[5].starts_with('$') {
+                                if !outputs
+                                    .contains_key(record[5].split_whitespace().nth(0).unwrap())
+                                {
                                     wires.entry(record[5].to_string()).or_default().0 = id;
                                 } else {
                                     let sn = parse_raw_name(&outputs, &record[5]);
@@ -161,9 +165,16 @@ impl LogicUnit {
                 }
             }
         }
-        for wire in wires.values() {
-            for to_id in &wire.1 {
-                unit.connect(wire.0, *to_id);
+        dbg!(&wires);
+        for (name, wire) in wires {
+            if let Some(sn) = outputs.get(name.split_whitespace().nth(0).unwrap()) {
+                for to_id in &wire.1 {
+                    unit.connect(unit.io.get_output(*sn).id, *to_id);
+                }
+            } else {
+                for to_id in &wire.1 {
+                    unit.connect(wire.0, *to_id);
+                }
             }
         }
         unit

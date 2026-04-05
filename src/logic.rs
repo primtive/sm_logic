@@ -37,31 +37,19 @@ pub fn dff() -> LogicUnit {
     unit
 }
 /// D trigger, 1 tick CLK (for SM)
+/// F for flip (1 tick only)
 pub fn dff_1tick() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let nand1 = unit.add_gate_output(LogicGateMode::Nand, false, sn!('Q'));
-    let nand2 = unit.add_gate(LogicGateMode::Nand, false);
-    let nand3 = unit.add_gate(LogicGateMode::Nand, false);
-    let nand4 = unit.add_gate(LogicGateMode::Nand, false);
-    let h = unit.add_gate(LogicGateMode::And, false);
-    let not = unit.add_gate(LogicGateMode::Nand, true);
-    let delay1 = unit.add_gate(LogicGateMode::And, false);
-    let delay2 = unit.add_gate(LogicGateMode::And, false);
-    let delay3 = unit.add_gate(LogicGateMode::Or, false);
-    unit.connect(nand1, h);
-    unit.connect(h, nand2);
-    unit.connect(nand2, nand1);
-    unit.connect(nand3, nand1);
-    unit.connect(nand4, nand2);
-    unit.connect(not, nand4);
-
-    unit.connect(delay1, delay2);
-    unit.connect(delay1, delay3);
-    unit.connect(delay2, delay3);
-    unit.connect(delay3, nand3);
-    unit.connect(delay3, nand4);
-    unit.io.create_input(sn!('D'), vec![nand3, not]);
-    unit.io.create_input(sn!('C'), vec![delay1, delay3]);
+    let bit = unit.add_gate_output(LogicGateMode::Xor, false, sn!('Q'));
+    let xor = unit.add_gate(LogicGateMode::Xor, false);
+    let and = unit.add_gate(LogicGateMode::And, false);
+    unit.connect(bit, bit);
+    unit.connect(bit, xor);
+    unit.connect(xor, and);
+    unit.connect(and, bit);
+    unit.io.create_input(sn!('D'), vec![xor]);
+    unit.io.create_input(sn!('C'), vec![and]);
+    unit.io.create_input(sn!('F'), vec![bit]);
     unit
 }
 
@@ -688,65 +676,37 @@ pub fn bin2bcd8b() -> LogicUnit {
     unit
 }
 
+/// inc - I (1 tick)
+/// set - S (1 tick)
+/// data - D
+/// output - O
 pub fn counter_8b() -> LogicUnit {
     let mut unit = LogicUnit::new();
-    let reg = unit.embed(reg_8b());
-    let adder = unit.embed(adder_substractor_8b());
-    unit.connect_io(&reg, &adder, 'O', 'A', 8);
-    unit.connect_io(&adder, &reg, 'O', 'I', 8);
-    // stub for K
-    let h = unit.add_gate(LogicGateMode::And, false);
-    unit.connect_to_input(h, adder.get_input(sn!('K')));
-
-    unit.io.create_input(
-        sn!('W'),
-        adder
-            .get_input(sn!('B', 0))
-            .ids
-            .iter()
-            .chain(reg.get_input(sn!('W')).ids.iter())
-            .cloned()
-            .collect(),
-    );
-
-    for i in 0..8 {
-        unit.io
-            .create_output(sn!('O', i), reg.get_output(sn!('O', i)).id);
-    }
-
-    unit
-}
-
-/// TODO
-pub fn cla_adder_4b() -> LogicUnit {
-    unimplemented!();
-    let mut unit = LogicUnit::new();
-
-    let pgs: Vec<(Id, Id)> = (0..4)
+    let ands: Vec<Id> = (0..8)
+        .map(|_| unit.add_gate(LogicGateMode::And, false))
+        .collect();
+    unit.io.create_input(sn!('S'), vec![]);
+    let bits: Vec<IO> = (0..8)
         .map(|i| {
-            // generate
-            let g = unit.add_gate(LogicGateMode::Nand, true);
-            // propagate
-            let p = unit.add_gate(LogicGateMode::Nor, true);
-
-            unit.io.create_input(sn!('A', i), vec![p, g]);
-            unit.io.create_input(sn!('B', i), vec![p, g]);
-            (p, g)
+            let io = unit.embed(dff_1tick());
+            unit.io.add_inputs(sn!('S'), &io.get_input(sn!('C')).ids);
+            unit.io
+                .create_input(sn!('D', i), io.get_input(sn!('D')).ids.clone());
+            unit.io
+                .create_output(sn!('O', i), io.get_output(sn!('Q')).id);
+            io
         })
         .collect();
+    unit.io.create_input(sn!('I'), ands.clone());
 
-    let xors: Vec<Id> = (0..7)
-        .map(|_| unit.add_gate(LogicGateMode::Xor, false))
-        .collect();
-    let ands: Vec<Id> = (0..15)
-        .map(|_| unit.add_gate(LogicGateMode::Xor, false))
-        .collect();
-    let ors: Vec<Id> = (0..8)
-        .map(|_| unit.add_gate(LogicGateMode::Xor, false))
-        .collect();
-
-    unit.io
-        .create_input(sn!('C'), vec![xors[0], ands[0], ands[1], ands[3]]);
+    let mut buf = Vec::new();
+    for (i, &and) in ands.iter().enumerate() {
+        unit.connect_to_input(and, bits[i].get_input(sn!('F')));
+        for &id in &buf {
+            unit.connect(id, and);
+        }
+        buf.push(bits[i].get_output(sn!('Q')).id);
+    }
 
     unit
 }
