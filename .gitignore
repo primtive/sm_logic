@@ -1,2 +1,4 @@
 /target
 scheme.circ
+.env*
+env.fish

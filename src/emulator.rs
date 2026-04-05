@@ -178,3 +178,12 @@ impl Emulator {
         }
     }
 }
+pub fn emu(unit: LogicUnit) {
+    Emulator::enable_mouse_mode();
+    let mut em = Emulator::new(unit);
+
+    em.display();
+    loop {
+        em.handle_events();
+    }
+}

@@ -8,6 +8,12 @@ macro_rules! sn {
     ($c:literal) => {
         SignalName($c, 0)
     };
+    ($c:expr) => {
+        SignalName($c, 0)
+    };
+    ($c:expr, $n:expr) => {
+        SignalName($c, $n)
+    };
     ($c:literal, $n:expr) => {
         SignalName($c, $n)
     };

@@ -1,6 +1,7 @@
 use crate::color::Color;
 use crate::logic_gate::{LogicGate, LogicGateMode, Switch};
 use crate::pos::Pos;
+use crate::sn;
 use crate::utils::{Id, SignalName};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -25,7 +26,7 @@ pub struct LogicUnit {
 }
 
 impl IO {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             inputs: Vec::new(),
             outputs: Vec::new(),
@@ -95,9 +96,37 @@ impl LogicUnit {
             self.connect(from_id, id);
         });
     }
+    pub fn connect_io(&mut self, from: &IO, to: &IO, from_name: char, to_name: char, len: u8) {
+        for i in 0..len {
+            self.connect_to_input(
+                from.get_output(sn!(from_name, i)).id,
+                to.get_input(sn!(to_name, i)),
+            );
+        }
+    }
     pub fn embed(&mut self, mut unit: LogicUnit) -> IO {
         self.gates.append(&mut unit.gates);
         unit.io
+    }
+    pub fn embed_gate(&mut self, gate: LogicGate) -> IO {
+        let gate_id = gate.id;
+        self.gates.push(gate);
+        IO {
+            inputs: vec![
+                Input {
+                    name: sn!('A'),
+                    ids: vec![gate_id],
+                },
+                Input {
+                    name: sn!('B'),
+                    ids: vec![gate_id],
+                },
+            ],
+            outputs: vec![Output {
+                id: gate_id,
+                name: sn!('Y'),
+            }],
+        }
     }
     fn get(&mut self, id: u32) -> Option<&LogicGate> {
         self.gates.iter().find(|g| g.id == id)
@@ -206,7 +235,7 @@ impl LogicUnit {
             if i != 0 && input.name.0 != self.io.inputs[i - 1].name.0 {
                 chcolor = !chcolor;
             }
-            let gate = LogicGate::new(LogicGateMode::AND, false);
+            let gate = LogicGate::new(LogicGateMode::OR, false);
             let color = match chcolor {
                 true => &Color::INPUT1,
                 false => &Color::INPUT2,
