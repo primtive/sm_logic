@@ -14,7 +14,7 @@ pub fn new_controller_id() -> Id {
         ID
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LogicGate {
     pub id: Id,
     pub active: bool,
@@ -22,7 +22,7 @@ pub struct LogicGate {
     pub children: Vec<Id>,
 }
 #[repr(u8)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LogicGateMode {
     And,
     Or,

@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs, io::Read};
 use itertools::Itertools;
 
 use crate::{
-    logic::dff,
+    logic::{dff, mux},
     logic_gate::{LogicGate, LogicGateMode},
     logic_unit::{IO, Input, LogicUnit, Output},
     sn,
@@ -99,19 +99,21 @@ impl LogicUnit {
 
                     for (i, record) in records.iter().enumerate() {
                         if i == 0 {
-                            if record[2] == "$_DFF_P_" {
-                                io = unit.embed(dff());
-                            } else {
-                                let mode = match record[2] {
-                                    "$_AND_" => LogicGateMode::And,
-                                    "$_OR_" => LogicGateMode::Or,
-                                    "$_NAND_" | "$_NOT_" => LogicGateMode::Nand,
-                                    "$_NOR_" => LogicGateMode::Nor,
-                                    "$_XOR_" => LogicGateMode::Xor,
-                                    "$_XNOR_" => LogicGateMode::Xnor,
-                                    _ => panic!("incorrect gate mode: {}", record[2]),
-                                };
-                                io = unit.embed_gate(LogicGate::new(mode, false));
+                            io = match record[2] {
+                                "$_DFF_P_" => unit.embed(dff()),
+                                "$_MUX_" => unit.embed(mux()),
+                                _ => {
+                                    let mode = match record[2] {
+                                        "$_AND_" => LogicGateMode::And,
+                                        "$_OR_" => LogicGateMode::Or,
+                                        "$_NAND_" | "$_NOT_" => LogicGateMode::Nand,
+                                        "$_NOR_" => LogicGateMode::Nor,
+                                        "$_XOR_" => LogicGateMode::Xor,
+                                        "$_XNOR_" => LogicGateMode::Xnor,
+                                        _ => panic!("incorrect gate mode: {}", record[2]),
+                                    };
+                                    unit.embed_gate(LogicGate::new(mode, false))
+                                }
                             }
                         }
 
@@ -165,8 +167,11 @@ impl LogicUnit {
                 }
             }
         }
-        dbg!(&wires);
+        // dbg!(&wires);
         for (name, wire) in wires {
+            if wire.0 == 0 {
+                continue;
+            }
             if let Some(sn) = outputs.get(name.split_whitespace().nth(0).unwrap()) {
                 for to_id in &wire.1 {
                     unit.connect(unit.io.get_output(*sn).id, *to_id);
@@ -177,6 +182,7 @@ impl LogicUnit {
                 }
             }
         }
+        unit.cleanup();
         unit
     }
 }

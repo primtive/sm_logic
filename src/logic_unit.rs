@@ -11,15 +11,17 @@ pub struct Input {
     pub name: SignalName,
     pub ids: Vec<Id>,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Output {
     pub name: SignalName,
     pub id: Id,
 }
+#[derive(Debug)]
 pub struct IO {
     pub inputs: Vec<Input>,
     pub outputs: Vec<Output>,
 }
+#[derive(Debug)]
 pub struct LogicUnit {
     pub(crate) gates: Vec<LogicGate>,
     pub io: IO,
@@ -194,42 +196,7 @@ impl LogicUnit {
             }
         });
 
-        // let mut groups: HashMap<char, Vec<Input>> = HashMap::new();
-        // for input in &self.io.inputs {
-        //     groups
-        //         .entry(input.name.0)
-        //         .or_insert_with(Vec::new)
-        //         .push(*input.clone());
-        // }
-        // groups.iter().for_each(|group| {
-        //     group.1.iter().for_each(|input| {
-        //         let gate = LogicGate::new(LogicGateMode::AND, false);
-        //         let color = match chcolor {
-        //             true => &Color::INPUT1,
-        //             false => &Color::INPUT2,
-        //         };
-        //         if switches {
-        //             let mut switch = Switch::new(false);
-        //             switch.add_child(gate.id);
-        //             items.push(
-        //                 switch.to_json(&(Pos::new(-(i as i32 + 1), 0, 1) + pos), &Color::INPUT1),
-        //             );
-        //         }
-        //         println!("i idx:{} name:{} id:{}", i, input.name, gate.id);
-        //         let gate_id = gate.id;
-        //         self.gates.push(gate);
-        //         let ids = input.ids.clone();
-        //         ids.iter().for_each(|&id| {
-        //             self.connect(gate_id, id);
-        //         });
-        //         items.push(
-        //             self.get(gate_id)
-        //                 .unwrap()
-        //                 .to_json(&pos.add_x(-(i as i32 + 1)), &Color::INPUT1),
-        //         );
-        //     });
-        // });
-        self.io.inputs.sort_by_key(|i| i.name.0);
+        self.io.inputs.sort_by_key(|i| i.name);
         for i in 0..self.io.inputs.len() {
             let input = &self.io.inputs[i];
             if i != 0 && input.name.0 != self.io.inputs[i - 1].name.0 {
@@ -391,5 +358,50 @@ impl LogicUnit {
         }
 
         items
+    }
+    pub fn cleanup(&mut self) {
+        let mut removed = 0;
+
+        for (mode, gate) in self.gates.clone().iter().filter_map(|g| {
+            if g.mode == LogicGateMode::And
+                || g.mode == LogicGateMode::Or
+                || g.mode == LogicGateMode::Xor
+            {
+                Some((g.mode, g))
+            } else {
+                None
+            }
+        }) {
+            if gate.children.len() == 1 {
+                if let Some(child) = self.gates.iter().find(|&g| g.id == gate.children[0]) {
+                    if child.mode == mode {
+                        let child_id = child.id;
+                        // all gates
+                        self.gates.iter_mut().for_each(|g| {
+                            // if g.id == gate.id {
+                            //     return;
+                            // }
+                            if let Some(idx) = g.children.iter().position(|&id| id == gate.id) {
+                                g.children.remove(idx);
+                                g.children.push(child_id);
+                            }
+                        });
+                        // all inputs
+                        self.io.inputs.iter_mut().for_each(|i| {
+                            if let Some(idx) = i.ids.iter().position(|&id| id == gate.id) {
+                                i.ids.remove(idx);
+                                i.ids.push(child_id);
+                            }
+                        });
+                        // remove gate
+                        let idx = self.gates.iter().position(|g| g.id == gate.id).unwrap();
+                        self.gates.remove(idx);
+
+                        removed += 1;
+                    }
+                }
+            }
+        }
+        println!("cleanup: removed {removed} gates");
     }
 }
