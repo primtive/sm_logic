@@ -59,5 +59,6 @@ impl LogicUnit {
             .unwrap()
             .write_all(out.as_bytes())
             .unwrap();
+        println!("graph saved to {path}");
     }
 }

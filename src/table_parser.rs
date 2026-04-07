@@ -39,6 +39,7 @@ impl LogicUnit {
 
         let mut inputs: HashMap<String, SignalName> = HashMap::new();
         let mut outputs: HashMap<String, SignalName> = HashMap::new();
+        let mut out_to_ins: HashMap<SignalName, Vec<Id>> = HashMap::new();
 
         let mut wires: HashMap<String, (Id, Vec<Id>)> = HashMap::new();
         for (k, section) in &table
@@ -121,15 +122,27 @@ impl LogicUnit {
 
                         match record[4] {
                             "in" => {
-                                let ids = &mut io.get_input(pin).ids.clone();
-                                if !inputs
+                                let input = io.get_input(pin);
+                                if record[5] == "1'0" {
+                                    let id = unit.add_gate(LogicGateMode::Xnor, false);
+                                    unit.connect_to_input(id, input);
+                                    // unit.connect(id, id);
+                                } else if outputs
+                                    .contains_key(record[5].split_whitespace().nth(0).unwrap())
+                                {
+                                    let sn = parse_raw_name(&outputs, &record[5]);
+                                    out_to_ins
+                                        .entry(sn)
+                                        .or_default()
+                                        .append(&mut input.ids.clone());
+                                } else if !inputs
                                     .contains_key(record[5].split_whitespace().nth(0).unwrap())
                                 {
                                     wires
                                         .entry(record[5].to_string())
                                         .or_default()
                                         .1
-                                        .append(ids)
+                                        .append(&mut input.ids.clone())
                                 } else {
                                     let sn = parse_raw_name(&inputs, &record[5]);
                                     if let Some(i) =
@@ -139,7 +152,7 @@ impl LogicUnit {
                                     } else {
                                         unit.io.inputs.push(Input {
                                             name: sn,
-                                            ids: ids.clone(),
+                                            ids: input.ids.clone(),
                                         });
                                     }
                                 }
@@ -152,13 +165,7 @@ impl LogicUnit {
                                     wires.entry(record[5].to_string()).or_default().0 = id;
                                 } else {
                                     let sn = parse_raw_name(&outputs, &record[5]);
-                                    if let Some(o) =
-                                        unit.io.outputs.iter_mut().find(|i| i.name == sn)
-                                    {
-                                        o.id = id;
-                                    } else {
-                                        unit.io.outputs.push(Output { name: sn, id: id });
-                                    }
+                                    unit.io.outputs.push(Output { name: sn, id: id });
                                 }
                             }
                             _ => panic!("incorrect pin mode"),
@@ -181,6 +188,10 @@ impl LogicUnit {
                     unit.connect(wire.0, *to_id);
                 }
             }
+        }
+        for (sn, ids) in out_to_ins {
+            let out_id = unit.io.get_output(sn).id;
+            ids.iter().for_each(|&id| unit.connect(out_id, id));
         }
         unit.cleanup();
         unit

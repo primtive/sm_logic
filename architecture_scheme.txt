@@ -1,0 +1,77 @@
+Memory mappings:
+0x00000000 - 0x00000fff: program data (.text)
+0x00001000 - 0xfffffeff: free memory
+0xffffff00 - 0xffffffff: reserved (videobuffer/io)
+
+
+REGISTERS: R0 - R15
+R0 - zero register
+R1 - ALU A
+R2 - ALU B
+R13 - memory address
+R14 - link register
+R15 - program counter
+
+
+0b0000 - NOP
+
+
+0b0001 - ALU
+0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 - 16 bit
+[code ] [opc] c [    const    ]
+const - 8 bit
+R1 = ALU(R1, R2)
+ALU opcodes:
+0b000 - ADD (with carry)
+0b001 - SUB (with carry)
+0b010 - XOR (bitwise)
+0b011 - NAND (bitwise)
+0b100 - SHL (SHIFT LEFT)
+0b101 - SHR (SHIFT RIGHT)
+
+
+0b0010 - MOV
+0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 - 16 bit
+[code ] [ Rs  ] [ Rd  ] -------
+Rd = Rs
+
+
+0b0011 - LDI
+0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 - 16 bit
+[code ] [ Rd  ] [    const    ]
+Rd = const (8 bit)
+
+
+0b0100 - LOAD
+0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 - 16 bit
+[code ] [ Rd  ] ---------------
+Rd = M(MA)
+
+
+0b0101 - STORE
+0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 - 16 bit
+[code ] [ Rs  ] ---------------
+M(MA) = Rs
+
+
+0b0110 - JMP
+0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 - 16 bit
+[code ] [       addr12        ]
+PC = addr12
+
+
+0b0111 - JZ
+0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 - 16 bit
+[code ] [       addr12        ]
+if R1 == 0:
+    PC = addr12
+
+
+CALL / RET - pseudo-instructions
+CALL addr:
+MOV PC R1
+ALU R1 ADD 1
+MOV R1 LR
+
+RET:
+MOV LR PC

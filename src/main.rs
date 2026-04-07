@@ -2,7 +2,7 @@
 // metal 2 block id: 1016cafc-9f6b-40c9-8713-9019d399783f
 // switch id: 7cf717d7-d167-4f2d-a6e7-6b2c70aa3986
 
-use crate::{logic_unit::LogicUnit, utils::SignalName};
+use crate::{emulator::emu, logic_unit::LogicUnit, utils::SignalName};
 use std::{fs::File, io::Write};
 
 use crate::{blueprint::Blueprint, logic::*, pos::Pos};
@@ -66,21 +66,39 @@ fn bcd_test() -> Blueprint {
     blueprint
 }
 
-fn bp() {
+fn bp(mut unit: LogicUnit) {
     let mut blueprint = Blueprint::new();
-    let mut unit = LogicUnit::from_table("/home/alexey/dev/learn/verilog/cla_adder_64b.table");
-    blueprint.place(unit.assemble_io(Pos::new(0, 1, 0), true));
+    blueprint.place(unit.assemble_io(Pos::new(0, 0, 0), true));
     let json = blueprint.to_json().to_string();
-    // println!("{json}");
     save_blueprint(json);
 }
 
 fn main() {
-    let unit = LogicUnit::from_table("/home/alexey/dev/learn/verilog/cla_adder_64b.table");
-    // let unit = alu_8b_4m();
+    let args: Vec<String> = std::env::args().collect();
+    let help = "sm_logic FILE (d|e|g|b|debug|emu|graph|blueprint)";
+    match args.len() {
+        1 | 2 => println!("{}", help),
+        3 => {
+            let path = &args[1];
+            let cmd = &args[2];
+            let mut unit = LogicUnit::from_table(path);
 
-    // emu(unit);
-    unit.save_dot("unit.dot");
-
-    bp();
+            match cmd.as_str() {
+                "d" | "debug" => {
+                    dbg!(&unit);
+                }
+                "e" | "emu" => emu(unit),
+                "g" | "graph" => {
+                    unit.save_dot("unit.dot");
+                    std::process::Command::new("xdot")
+                        .arg("unit.dot")
+                        .spawn()
+                        .expect("xdot not found");
+                }
+                "b" | "blueprint" => bp(unit),
+                _ => println!("{}", help),
+            }
+        }
+        _ => println!("{}", help),
+    }
 }
